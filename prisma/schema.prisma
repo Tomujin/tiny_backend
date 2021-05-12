@@ -1,0 +1,641 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostType {
+  Assessment
+  Practice
+  Learning
+  Medidation
+  Rank
+  TargetExam
+  TargetPoint
+  InviteFriends
+  FollowMembers
+  TargetSchool
+  Community
+}
+
+enum StoryType {
+  Story
+  Post
+}
+
+model Passage {
+  id              String           @id @default(uuid())
+  title           String
+  text            String
+  sourcePath      String
+  mediaType       MediaType
+  User            User             @relation(fields: [userId], references: [id])
+  userId          String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  Posts           Post[]
+  learningObjects LearningObject[]
+}
+
+model Post {
+  id                      String                    @id @default(uuid())
+  postType                PostType
+  title                   String?
+  description             String?
+  isPublished             Boolean?                  @default(false)
+  publishedDate           DateTime?
+  User                    User                      @relation(fields: [userId], references: [id])
+  userId                  String
+  Passage                 Passage?                  @relation(fields: [passageId], references: [id])
+  passageId               String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  Contents                Content[]
+  learningObjects         LearningObject[]
+  PostComments            PostComments[]
+  UserSavedPosts          UserSavedPosts[]
+  UserCurriculumRetention UserCurriculumRetention[]
+  UserLearningProgress    UserLearningProgress[]
+  PostCurriculum          PostCurriculum[]
+  PostReactions           PostReactions[]
+  PostView                PostView[]
+}
+
+model PostCurriculum {
+  id           String     @id @default(uuid())
+  Post         Post       @relation(fields: [postId], references: [id])
+  Curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  postId       String
+  curriculumId String
+}
+
+enum ContentType {
+  Assessment
+  Practice
+  Learning
+
+}
+
+enum MediaType {
+  Video
+  Image
+  Voice
+  Text
+  Latex
+}
+
+enum AnswerType {
+  MultipleChoice
+  SPR
+  Voice
+}
+
+model Content {
+  id                    String                  @id @default(uuid())
+  orderNum              Int?                    @default(0)
+  postId                String
+  Post                  Post                    @relation(fields: [postId], references: [id])
+  contentType           ContentType
+  mediaType             MediaType
+  contentText           String?
+  sourcePath            String?
+  voiceOverPath         String?
+  contentSize           Float?
+  answerType            AnswerType
+  Answers               ContentAnswer[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  LearningObjects       LearningObject[]
+  UserAnswersOnContents UserAnswersOnContents[]
+}
+
+model ContentAnswer {
+  id                    String                  @id @default(uuid())
+  mediaType             MediaType
+  answer                String?
+  sourcePath            String?
+  Point                 Float                   @default(0)
+  contentId             String?
+  Content               Content?                @relation(fields: [contentId], references: [id])
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  UserAnswersOnContents UserAnswersOnContents[]
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  permissions Json?
+  Users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id                      String                    @id @default(uuid())
+  email                   String                    @unique
+  sub                     String                    @unique
+  firstName               String?
+  lastName                String?
+  userName                String?
+  profilePic              String?
+  bio                     String?
+  isOnboarded             Boolean                   @default(false)
+  Posts                   Post[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  Passage                 Passage[]
+  Roles                   Role[]
+  AcceptedByUser          User?                     @relation("UserToUser", fields: [acceptedUserId], references: [id])
+  UserCurriculum          UserCurriculum[]
+  UserCurriculumSchool    UserCurriculumSchool[]
+  UserAnswersOnContents   UserAnswersOnContents[]
+  UserCareer              UserCareer[]
+  UserFollow              UserFollow[]
+  Followed                UserFollow[]              @relation("FollowUser")
+  UserConfig              UserConfig[]
+  PostComments            PostComments[]
+  UserSavedPosts          UserSavedPosts[]
+  UserCurriculumRetention UserCurriculumRetention[]
+  UserLearningProgress    UserLearningProgress[]
+  UserLearningCurriculum  UserLearningCurriculum[]
+  PostReactions           PostReactions[]
+  Story                   Story[]
+  UserSeenStory           UserSeenStory[]
+  UserMomentum            UserMomentum[]
+  PostView                PostView[]
+  User                    User[]                    @relation("UserToUser")
+  acceptedUserId          String?
+  UserSocialNetwork       UserSocialNetwork[]
+  UserBadge               UserBadge[]
+  Feedback                Feedback[]
+  UserActivity            UserActivity[]
+  UserOnboard             UserOnboard[]
+}
+
+model SocialNetwork {
+  id                String              @id @default(uuid())
+  name              String
+  logo              String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  UserSocialNetwork UserSocialNetwork[]
+}
+
+model UserSocialNetwork {
+  id              String        @id @default(uuid())
+  User            User          @relation(fields: [userId], references: [id])
+  userName        String
+  SocialNetwork   SocialNetwork @relation(fields: [socialNetworkId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+  userId          String
+  socialNetworkId String
+}
+
+model BadgeType {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Badge     Badge[]
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  name        String
+  logo        String
+  BadgeType   BadgeType   @relation(fields: [badgeTypeId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  badgeTypeId String
+  UserBadge   UserBadge[]
+}
+
+model BadgeStatus {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  UserBadge UserBadge[]
+}
+
+model UserBadge {
+  id            String      @id @default(uuid())
+  User          User        @relation(fields: [userId], references: [id])
+  Badge         Badge       @relation(fields: [badgeId], references: [id])
+  BadgeStatus   BadgeStatus @relation(fields: [badgeStatusId], references: [id])
+  isDefault     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String
+  badgeId       String
+  badgeStatusId String
+}
+
+model Subject {
+  id         String       @id @default(uuid())
+  name       String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Curriculum Curriculum[]
+}
+
+model CurriculumLevel {
+  id         String       @id @default(uuid())
+  name       String
+  level      Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Curriculum Curriculum[]
+}
+
+model Curriculum {
+  id                      String                    @id @default(uuid())
+  parentId                String?
+  ParentCurriculum        Curriculum?               @relation("CurriculumToCurriculum", fields: [parentId], references: [id])
+  subjectId               String?
+  Subject                 Subject?                  @relation(fields: [subjectId], references: [id])
+  levelId                 String?
+  Level                   CurriculumLevel?          @relation(fields: [levelId], references: [id])
+  name                    String
+  point                   Float                     @default(0)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  UserCurriculums         UserCurriculum[]
+  CurriculumSchools       CurriculumSchool[]
+  //learningObjects   LearningObjectsOnCurriculums[]
+  ChildCurriculums        Curriculum[]              @relation("CurriculumToCurriculum")
+  PostCurriculum          PostCurriculum[]
+  UserCurriculumRetention UserCurriculumRetention[]
+  UserLearningCurriculum  UserLearningCurriculum[]
+  CurriculumScores        CurriculumScores[]
+  UserCurriculumRate      UserCurriculumRate[]
+}
+
+model CurriculumSchool {
+  id                   String                 @id @default(uuid())
+  name                 String
+  // createdAt    DateTime    @default(now())
+  // updatedAt    DateTime    @updatedAt
+  Curriculum           Curriculum?            @relation(fields: [curriculumId], references: [id])
+  curriculumId         String?
+  UserCurriculumSchool UserCurriculumSchool[]
+}
+
+model CurriculumScores {
+  id           String     @id @default(uuid())
+  point        Int
+  Curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  curriculumId String
+}
+
+model LearningObject {
+  id                   String                 @id @default(uuid())
+  name                 String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  //curriculums LearningObjectsOnCurriculums[]
+  posts                Post[]
+  contents             Content[]
+  passages             Passage[]
+  UserLearningProgress UserLearningProgress[]
+}
+
+model UserCurriculum {
+  id                 String               @id @default(uuid())
+  User               User                 @relation(fields: [userId], references: [id])
+  point              Float?
+  applyingDate       String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  Curriculum         Curriculum?          @relation(fields: [curriculumId], references: [id])
+  curriculumId       String?
+  userId             String
+  UserCurriculumRate UserCurriculumRate[]
+}
+
+model UserCurriculumSchool {
+  id               String           @id @default(uuid())
+  User             User             @relation(fields: [userId], references: [id])
+  CurriculumSchool CurriculumSchool @relation(fields: [curriculumSchoolId], references: [id])
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  userId             String
+  curriculumSchoolId String
+}
+
+// model LearningObjectsOnCurriculums {
+//   curriculumId      String
+//   Curriculum        Curriculum      @relation(fields: [curriculumId], references: [id])
+//   learningObjectId  String
+//   LearningObject    LearningObject  @relation(fields: [learningObjectId], references: [id])
+
+//   @@id([curriculumId, learningObjectId])
+// }
+
+model UserAnswersOnContents {
+  id          String         @id @default(uuid())
+  contentId   String
+  Content     Content        @relation(fields: [contentId], references: [id])
+  answerId    String?
+  Answer      ContentAnswer? @relation(fields: [answerId], references: [id])
+  answerText  String?
+  userId      String
+  User        User           @relation(fields: [userId], references: [id])
+  challengeId String? //TODO relation
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model PostComments {
+  id            String         @id @default(uuid())
+  Post          Post           @relation(fields: [postId], references: [id])
+  postId        String
+  User          User           @relation(fields: [userId], references: [id])
+  userId        String
+  comment       String
+  ParentComment PostComments?  @relation("PostCommentsToPostComments", fields: [parentId], references: [id])
+  parentId      String?
+  ChildComments PostComments[] @relation("PostCommentsToPostComments")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PostReactions {
+  id             String        @id @default(uuid())
+  Post           Post          @relation(fields: [postId], references: [id])
+  postId         String
+  User           User          @relation(fields: [userId], references: [id])
+  userId         String
+  ReactionTypes  ReactionTypes @relation(fields: [reactionTypeId], references: [id])
+  reactionTypeId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+}
+
+model PostView {
+  id             String   @id @default(uuid())
+  Post           Post     @relation(fields: [postId], references: [id])
+  User           User     @relation(fields: [userId], references: [id])
+  postType       PostType
+  watchDate      DateTime @default(now())
+  watchIndex     Int
+  visiblePercent Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  postId         String
+  userId         String
+
+}
+
+model ReactionTypes {
+  id            String          @id @default(uuid())
+  name          String
+  iconPath      String
+  value         Int
+  PostReactions PostReactions[]
+}
+
+model Career {
+  id         String       @id @default(uuid())
+  name       String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  UserCareer UserCareer[]
+}
+
+model UserCareer {
+  id        String   @id @default(uuid())
+  User      User     @relation(fields: [userId], references: [id])
+  Career    Career   @relation(fields: [careerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  careerId  String
+}
+
+model UserFollow {
+  id           String   @id @default(uuid())
+  User         User     @relation(fields: [userId], references: [id])
+  FollowedUser User     @relation("FollowUser", fields: [followId], references: [id])
+  isFollow     Boolean
+  isBuddy      Boolean
+  followDate   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  followId     String
+  userId       String
+}
+
+model UserConfig {
+  id           String   @id @default(uuid())
+  User         User     @relation(fields: [userId], references: [id])
+  userId       String
+  instensity   Float?
+  isOnNotify   Boolean  @default(true)
+  isAllowTerms Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model UserSavedPosts {
+  id        String   @id @default(uuid())
+  Post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  User      User     @relation(fields: [userId], references: [id])
+  userId    String
+  isPublic  Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RetentionConfig {
+  id                      String                    @id @default(uuid())
+  sequence                Int
+  retentionDay            Int
+  isLearn                 Boolean
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  UserCurriculumRetention UserCurriculumRetention[]
+}
+
+model UserCurriculumRetention {
+  id                String          @id @default(uuid())
+  RetentionConfig   RetentionConfig @relation(fields: [retentionConfigId], references: [id])
+  retentionDate     DateTime
+  active            Boolean
+  Post              Post            @relation(fields: [postId], references: [id])
+  User              User            @relation(fields: [userId], references: [id])
+  Curriculum        Curriculum      @relation(fields: [curriculumId], references: [id])
+  retentionConfigId String
+  postId            String
+  userId            String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  curriculumId      String
+}
+
+model UserLearningProgress {
+  id               String         @id @default(uuid())
+  User             User           @relation(fields: [userId], references: [id])
+  Post             Post           @relation(fields: [postId], references: [id])
+  LearningObject   LearningObject @relation(fields: [learningObjectId], references: [id])
+  point            Float
+  pointType        String
+  userId           String
+  postId           String
+  learningObjectId String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model UserLearningCurriculum {
+  id           String     @id @default(uuid())
+  User         User       @relation(fields: [userId], references: [id])
+  Curriculum   Curriculum @relation(fields: [curriculumId], references: [id])
+  isLearned    Boolean
+  lastUpdated  DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  userId       String
+  curriculumId String
+}
+
+model Story {
+  id            String    @id @default(uuid())
+  publishedDate DateTime?
+  User          User      @relation(fields: [userId], references: [id])
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  StoryContent  StoryContent[]
+  UserSeenStory UserSeenStory[]
+}
+
+model StoryContent {
+  id          String    @id @default(uuid())
+  storyType   StoryType
+  Story       Story     @relation(fields: [storyId], references: [id])
+  mediaType   MediaType
+  duration    Int
+  contentText String?
+  sourcePath  String?
+  contentSize Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  storyId       String
+  UserSeenStory UserSeenStory[]
+}
+
+model UserSeenStory {
+  id             String       @id @default(uuid())
+  Story          Story        @relation(fields: [storyId], references: [id])
+  StoryContent   StoryContent @relation(fields: [storyContentId], references: [id])
+  seenDate       DateTime
+  User           User         @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  storyId        String
+  storyContentId String
+  userId         String
+}
+
+model UserCurriculumRate {
+  id               String         @id @default(uuid())
+  UserCurriculum   UserCurriculum @relation(fields: [userCurriculumId], references: [id])
+  userCurriculumId String
+  Curriculum       Curriculum     @relation(fields: [curriculumId], references: [id])
+  curriculumId     String
+  rate             Float
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model MomentumItem {
+  id           String         @id @default(uuid())
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  UserMomentum UserMomentum[]
+
+}
+
+model UserMomentum {
+  id             String       @id @default(uuid())
+  momentDay      DateTime
+  madeCount      Int
+  User           User         @relation(fields: [userId], references: [id])
+  MomentumItem   MomentumItem @relation(fields: [momentumItemId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  momentumItemId String
+  userId         String
+}
+
+model Feedback {
+  id         String   @id @default(uuid())
+  feedback   String
+  screenshot String?
+  isFixed    Boolean  @default(false)
+  solution   String?
+  User       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId String
+}
+
+model ActivityType {
+  id           String         @id @default(uuid())
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  UserActivity UserActivity[]
+}
+
+model UserActivity {
+  id             String       @id @default(uuid())
+  ActivityType   ActivityType @relation(fields: [activityTypeId], references: [id])
+  User           User         @relation(fields: [userId], references: [id])
+  activityId     String?
+  isWatched      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  activityTypeId String
+  userId         String
+}
+
+model OnboardType {
+  id          String        @id @default(uuid())
+  name        String
+  index       Int
+  postType    PostType
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  UserOnboard UserOnboard[]
+}
+
+model UserOnboard {
+  id          String      @id @default(uuid())
+  OnboardType OnboardType @relation(fields: [onboardTypeId], references: [id])
+
+  User          User     @relation(fields: [userId], references: [id])
+  isSeen        Boolean  @default(false)
+  isFinish      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  onboardTypeId String
+  userId        String
+}
